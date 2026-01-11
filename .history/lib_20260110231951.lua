@@ -47,8 +47,4 @@ function lib.Distance_3D_Calc(x1,y1,z1, x2,y2,z2)
     return math.sqrt(dx*dx + dy*dy + dz*dz)
 end
 
-function print_lib()
-    print("lib loaded")
-end
-
 return lib

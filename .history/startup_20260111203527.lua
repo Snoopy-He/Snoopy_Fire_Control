@@ -1,3 +1,5 @@
+local lib = require("lib")
+
 local Motor={peripheral.find("Create_RotationSpeedController")}
 local Pit=Motor[1]
 local Yaw=Motor[2]
@@ -379,6 +381,7 @@ while true do
     Motor_Calc()
     --print(Direction.Pitch_Angle)
     print("Flying_Time:"..string.format("%.2f",Direction.Flying_Time))
+    lib.print_lib()
     --print("Yaw Target: "..math.floor(Direction.Yaw_Angle).."Yaw Current: "..math.floor(Yaw_Angle).." Pitch Target: "..math.floor(Direction.Pitch_Angle).." Pitch Current: "..math.floor(Pitch_Angle))
 
 end

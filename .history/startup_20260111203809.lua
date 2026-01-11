@@ -1,3 +1,4 @@
+local lib = require("lib")
 local Motor={peripheral.find("Create_RotationSpeedController")}
 local Pit=Motor[1]
 local Yaw=Motor[2]

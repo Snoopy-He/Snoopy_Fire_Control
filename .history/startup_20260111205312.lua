@@ -355,10 +355,16 @@ function LinearPredictor_Calc(target_pos, flying_time)
 
     Last_Pos = target_pos
 
+    local total_v = math.sqrt(target_vx*target_vx + target_vy*target_vy + target_vz*target_vz)
+    if total_v < 0.01 then
+        total_v = 10000
+    end
+
+    print("predit:"..target_vx * flying_time * (0.7 + 1/total_v / 10).."total_v:"..total_v)
     return {
-        X = target_pos.X + target_vx * flying_time * 0.8,
-        Y = target_pos.Y + target_vy * flying_time * 0.8,
-        Z = target_pos.Z + target_vz * flying_time * 0.8,
+        X = target_pos.X + target_vx * flying_time * (0.6 + 1/total_v / 10),
+        Y = target_pos.Y + target_vy * flying_time * (0.7 + 1/total_v / 10),
+        Z = target_pos.Z + target_vz * flying_time * (0.7 + 1/total_v / 10),
     }
 end
 
@@ -378,7 +384,7 @@ while true do
     --Direction = Binary_Method_Track_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, Target_pos.X, Target_pos.Y, Target_pos.Z)
     Motor_Calc()
     --print(Direction.Pitch_Angle)
-    print("Flying_Time:"..string.format("%.2f",Direction.Flying_Time))
+    --print("Flying_Time:"..string.format("%.2f",Direction.Flying_Time))
     --print("Yaw Target: "..math.floor(Direction.Yaw_Angle).."Yaw Current: "..math.floor(Yaw_Angle).." Pitch Target: "..math.floor(Direction.Pitch_Angle).." Pitch Current: "..math.floor(Pitch_Angle))
 
 end

@@ -356,7 +356,7 @@ function LinearPredictor_Calc(target_pos, flying_time)
     Last_Pos = target_pos
 
     return {
-        X = target_pos.X + target_vx * flying_time * 0.8,
+        X = target_pos.X + target_vx * flying_time * 0.8 + 1/,
         Y = target_pos.Y + target_vy * flying_time * 0.8,
         Z = target_pos.Z + target_vz * flying_time * 0.8,
     }

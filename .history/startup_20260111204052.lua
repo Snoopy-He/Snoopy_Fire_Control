@@ -355,10 +355,12 @@ function LinearPredictor_Calc(target_pos, flying_time)
 
     Last_Pos = target_pos
 
+    local total_v = math.sqrt(target_vx*target_vx + target_vy*target_vy + target_vz*target_vz)
+
     return {
-        X = target_pos.X + target_vx * flying_time * 0.8,
-        Y = target_pos.Y + target_vy * flying_time * 0.8,
-        Z = target_pos.Z + target_vz * flying_time * 0.8,
+        X = target_pos.X + target_vx * flying_time * 0.8 + 1/math.abs(target_vx) * 5,
+        Y = target_pos.Y + target_vy * flying_time * 0.8 + 1/math.abs(target_vy) * 5,
+        Z = target_pos.Z + target_vz * flying_time * 0.8 + 1/math.abs(target_vz) * 5,
     }
 end
 
