@@ -372,7 +372,7 @@ Cannon_Pos = Cannon_Position_Update()
 --print(package.path)
 while true do
     Target_pos = Target_Update()
-    Target_pos = LinearPredictor_Calc(Target_pos, Direction.Flying_Time)
+    Target_pos = LinearPredictor_Calc(Target_pos, Direction.Flying_Time, Cannon_Pos)
     --Target_pos = Position_Update(-100,-20,200)
     Direction = Track_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, Target_pos.X, Target_pos.Y, Target_pos.Z)
     --Direction = Binary_Method_Track_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, Target_pos.X, Target_pos.Y, Target_pos.Z)

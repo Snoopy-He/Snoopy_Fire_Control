@@ -90,10 +90,10 @@ function Target_Update()
         --print("pose="..v.pose)
         --print("x="..v.x.." y="..v.y.." z="..v.z.." name="..v.name)
         --print("x="..v.x.." y="..v.y.." z="..v.z)
-        --tx = v.x
-        --ty = v.y+v.eyeHeight
-        --tz = v.z
-        --tname = v.name
+        tx = v.x
+        ty = v.y+v.eyeHeight
+        tz = v.z
+        tname = v.name
     end
 
     for k, v in pairs(monsters) do
@@ -113,10 +113,10 @@ function Target_Update()
     end
     if dist < Distance and dist > 9 then
         Distance = dist
-        tx = v.x
-        ty = v.y+0.5
-        tz = v.z
-        tname = v.name
+        --tx = v.x
+        --ty = v.y+0.6
+        --tz = v.z
+        --tname = v.name
     end
 end
     return {
@@ -356,9 +356,9 @@ function LinearPredictor_Calc(target_pos, flying_time)
     Last_Pos = target_pos
 
     return {
-        X = target_pos.X + target_vx * flying_time * 0.8,
-        Y = target_pos.Y + target_vy * flying_time * 0.8,
-        Z = target_pos.Z + target_vz * flying_time * 0.8,
+        X = target_pos.X + target_vx * flying_time,
+        Y = target_pos.Y + target_vy * flying_time,
+        Z = target_pos.Z + target_vz* flying_time
     }
 end
 

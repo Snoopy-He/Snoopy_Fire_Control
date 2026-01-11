@@ -90,10 +90,10 @@ function Target_Update()
         --print("pose="..v.pose)
         --print("x="..v.x.." y="..v.y.." z="..v.z.." name="..v.name)
         --print("x="..v.x.." y="..v.y.." z="..v.z)
-        --tx = v.x
-        --ty = v.y+v.eyeHeight
-        --tz = v.z
-        --tname = v.name
+        tx = v.x
+        ty = v.y+v.eyeHeight
+        tz = v.z
+        tname = v.name
     end
 
     for k, v in pairs(monsters) do
@@ -113,10 +113,10 @@ function Target_Update()
     end
     if dist < Distance and dist > 9 then
         Distance = dist
-        tx = v.x
-        ty = v.y+0.5
-        tz = v.z
-        tname = v.name
+        --tx = v.x
+        --ty = v.y+0.6
+        --tz = v.z
+        --tname = v.name
     end
 end
     return {
@@ -356,14 +356,13 @@ function LinearPredictor_Calc(target_pos, flying_time)
     Last_Pos = target_pos
 
     return {
-        X = target_pos.X + target_vx * flying_time * 0.8,
-        Y = target_pos.Y + target_vy * flying_time * 0.8,
-        Z = target_pos.Z + target_vz * flying_time * 0.8,
+        X = target_pos.X + target_vx * flying_time * 1.4,
+        Y = target_pos.Y + target_vy * flying_time * 1.4,
+        Z = target_pos.Z + target_vz* flying_time * 1.4
     }
 end
 
 function KalmanPredictor_Calc(target_pos, flying_time)
-end
 
 
 Deinit()
@@ -372,7 +371,7 @@ Cannon_Pos = Cannon_Position_Update()
 --print(package.path)
 while true do
     Target_pos = Target_Update()
-    Target_pos = LinearPredictor_Calc(Target_pos, Direction.Flying_Time)
+    Target_pos = Predict_Calc(Target_pos, Direction.Flying_Time)
     --Target_pos = Position_Update(-100,-20,200)
     Direction = Track_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, Target_pos.X, Target_pos.Y, Target_pos.Z)
     --Direction = Binary_Method_Track_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, Target_pos.X, Target_pos.Y, Target_pos.Z)

@@ -346,7 +346,7 @@ end
 
 local Last_Pos = NewPosition(0,0,0)
 
-function LinearPredictor_Calc(target_pos, flying_time)
+function LinearPredictor_Calc(target_pos, flying_time,cannon_pos)
     local target_vx, target_vy, target_vz = 0,0,0
 
     target_vx = target_pos.X - Last_Pos.X
@@ -356,9 +356,9 @@ function LinearPredictor_Calc(target_pos, flying_time)
     Last_Pos = target_pos
 
     return {
-        X = target_pos.X + target_vx * flying_time * 0.8,
-        Y = target_pos.Y + target_vy * flying_time * 0.8,
-        Z = target_pos.Z + target_vz * flying_time * 0.8,
+        X = target_pos.X + target_vx * flying_time * (0.8 +target_pos.Y-cannon_pos.Y)/15,
+        Y = target_pos.Y + target_vy * flying_time * (0.8 +target_pos.Y-cannon_pos.Y)/15,
+        Z = target_pos.Z + target_vz * flying_time * (0.8 +target_pos.Y-cannon_pos.Y)/15,
     }
 end
 
@@ -372,7 +372,7 @@ Cannon_Pos = Cannon_Position_Update()
 --print(package.path)
 while true do
     Target_pos = Target_Update()
-    Target_pos = LinearPredictor_Calc(Target_pos, Direction.Flying_Time)
+    Target_pos = LinearPredictor_Calc(Target_pos, Direction.Flying_Time, Cannon_Pos)
     --Target_pos = Position_Update(-100,-20,200)
     Direction = Track_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, Target_pos.X, Target_pos.Y, Target_pos.Z)
     --Direction = Binary_Method_Track_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, Target_pos.X, Target_pos.Y, Target_pos.Z)

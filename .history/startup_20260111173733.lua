@@ -74,9 +74,9 @@ end
 local tx,ty,tz,tname = 0,0,0,""
 
 function Target_Update()
-    local players = coordinate.getPlayers(300)
-    local monsters = coordinate.getMonster(300)
-    local Distance = 400
+    local players = coordinate.getPlayers(512)
+    local monsters = coordinate.getMonster(512)
+    local Distance = 9999
     for k, v in pairs(players) do
         --print("x="..v.x)
         --print("y="..v.y)
@@ -108,13 +108,10 @@ function Target_Update()
     --print("viewVector.z="..v.viewVector.z)
     --print("armor="..v.armor)
     local dist = Distance_3D_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, v.x, v.y, v.z)
-    if dist>300 then
-        dist = 300
-    end
     if dist < Distance and dist > 9 then
         Distance = dist
         tx = v.x
-        ty = v.y+0.5
+        ty = v.y+0.6
         tz = v.z
         tname = v.name
     end
@@ -338,31 +335,7 @@ function Flying_Time_Calc(pitch,distance)
     local l = 6    --身管长度
 
     local result = -math.log(1-(distance-l*math.cos(pitch))*d/(m*n*T*math.cos(pitch)))/d
-    if result~=result then
-        return 0
-    end
     return result
-end
-
-local Last_Pos = NewPosition(0,0,0)
-
-function LinearPredictor_Calc(target_pos, flying_time)
-    local target_vx, target_vy, target_vz = 0,0,0
-
-    target_vx = target_pos.X - Last_Pos.X
-    target_vy = target_pos.Y - Last_Pos.Y
-    target_vz = target_pos.Z - Last_Pos.Z
-
-    Last_Pos = target_pos
-
-    return {
-        X = target_pos.X + target_vx * flying_time * 0.8,
-        Y = target_pos.Y + target_vy * flying_time * 0.8,
-        Z = target_pos.Z + target_vz * flying_time * 0.8,
-    }
-end
-
-function KalmanPredictor_Calc(target_pos, flying_time)
 end
 
 
@@ -372,7 +345,6 @@ Cannon_Pos = Cannon_Position_Update()
 --print(package.path)
 while true do
     Target_pos = Target_Update()
-    Target_pos = LinearPredictor_Calc(Target_pos, Direction.Flying_Time)
     --Target_pos = Position_Update(-100,-20,200)
     Direction = Track_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, Target_pos.X, Target_pos.Y, Target_pos.Z)
     --Direction = Binary_Method_Track_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, Target_pos.X, Target_pos.Y, Target_pos.Z)
