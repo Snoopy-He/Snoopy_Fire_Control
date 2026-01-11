@@ -89,10 +89,10 @@ function Target_Update()
         --print("pose="..v.pose)
         --print("x="..v.x.." y="..v.y.." z="..v.z.." name="..v.name)
         --print("x="..v.x.." y="..v.y.." z="..v.z)
-        --tx = v.x
-        --ty = v.y+v.eyeHeight
-        --tz = v.z
-        --tname = v.name
+        tx = v.x
+        ty = v.y+v.eyeHeight
+        tz = v.z
+        tname = v.name
     end
 
     for k, v in pairs(monsters) do
@@ -106,14 +106,10 @@ function Target_Update()
     --print("maxHealth="..v.maxHealth)
     --print("viewVector.z="..v.viewVector.z)
     --print("armor="..v.armor)
-    local dist = Distance_3D_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, v.x, v.y, v.z)
-    if dist < Distance and dist > 9 then
-        Distance = dist
-        tx = v.x
-        ty = v.y+0.6
+    tx = v.x
+        ty = v.y+v.eyeHeight
         tz = v.z
         tname = v.name
-    end
 end
     return {
         X = tx,
@@ -123,9 +119,6 @@ end
     }
 end
 
-function Target_Fliter()
-    
-end
 
 function Direction_Calc(x1,y1,z1,x2,y2,z2)
     return {
@@ -298,7 +291,7 @@ function Track_Calc(x1,y1,z1,x2,y2,z2)   --弹道计算
     --local d = 0.01 --阻力系数
     local T = 0.05 --时间间隔
     --local k = 0.05 --重力分量
-    local k = 0.0255 --重力分量
+    local k = 0.025 --重力分量
     local l = 6    --身管长度
     local velocity  --初速度
     local w = Distance_2D_Calc(x1,z1, x2,z2)

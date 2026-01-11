@@ -139,8 +139,8 @@ end
 local Yaw_Angle = 0
 local Pitch_Angle = 0
 
-local kp_yaw = 20.0
-local kp_pitch = 20.0
+local kp_yaw = 50.0
+local kp_pitch = 50.0
 
 function Clamp(value, min, max)
     if value < min then

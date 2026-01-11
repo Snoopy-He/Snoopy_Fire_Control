@@ -73,8 +73,7 @@ end
 local tx,ty,tz,tname = 0,0,0,""
 
 function Target_Update()
-    local players = coordinate.getPlayers(512)
-    local monsters = coordinate.getMonster(512)
+    players = coordinate.getPlayers(512)
     local Distance = 9999
     for k, v in pairs(players) do
         --print("x="..v.x)
@@ -89,32 +88,11 @@ function Target_Update()
         --print("pose="..v.pose)
         --print("x="..v.x.." y="..v.y.." z="..v.z.." name="..v.name)
         --print("x="..v.x.." y="..v.y.." z="..v.z)
-        --tx = v.x
-        --ty = v.y+v.eyeHeight
-        --tz = v.z
-        --tname = v.name
-    end
-
-    for k, v in pairs(monsters) do
-    --print("x="..v.x)
-    --print("y="..v.y)
-    --print("z="..v.z)
-    --print("name="..v.name)
-    --print("uuid="..v.uuid)
-    --print("displayName="..v.displayName)
-    --print("health="..v.health)
-    --print("maxHealth="..v.maxHealth)
-    --print("viewVector.z="..v.viewVector.z)
-    --print("armor="..v.armor)
-    local dist = Distance_3D_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, v.x, v.y, v.z)
-    if dist < Distance and dist > 9 then
-        Distance = dist
         tx = v.x
-        ty = v.y+0.6
+        ty = v.y+v.eyeHeight
         tz = v.z
         tname = v.name
     end
-end
     return {
         X = tx,
         Y = ty,
@@ -123,9 +101,6 @@ end
     }
 end
 
-function Target_Fliter()
-    
-end
 
 function Direction_Calc(x1,y1,z1,x2,y2,z2)
     return {
@@ -162,23 +137,10 @@ function circle_limit(angle)
     return angle
 end
 
-local last_yaw = 0
-local last_pitch = 0
 
 function Motor_Calc()
     Direction.Yaw_Angle = circle_limit(Direction.Yaw_Angle)
     Direction.Pitch_Angle = Clamp(Direction.Pitch_Angle, -30,80)
-    if Direction.Yaw_Angle ~= Direction.Yaw_Angle then
-        --print("Yaw NAN")
-        Direction.Yaw_Angle = last_yaw
-        return
-    end
-
-    if Direction.Pitch_Angle ~= Direction.Pitch_Angle then
-        --print("Pitch NAN")
-        Direction.Pitch_Angle = last_pitch
-        return
-    end
 
     if math.abs(Direction.Yaw_Angle - Yaw_Angle) > 180 then
         if Direction.Yaw_Angle > Yaw_Angle then
@@ -203,8 +165,6 @@ function Motor_Calc()
 
     Yaw.setTargetSpeed(math.floor(Yaw_Value))
     Pit.setTargetSpeed(math.floor(Pitch_Value))
-    last_yaw = Direction.Yaw_Angle
-    last_pitch = Direction.Pitch_Angle
     Yaw_Angle= Yaw_Angle + math.floor(Yaw_Value)/Angle_Speed
     Pitch_Angle= Pitch_Angle + math.floor(Pitch_Value)/Angle_Speed
     if Yaw_Angle>360 then
@@ -292,13 +252,13 @@ function Newton_Raphson(p1,p2,p3,p4,p5,a,x0,n)
 end
 
 function Track_Calc(x1,y1,z1,x2,y2,z2)   --弹道计算
-    local n = 6 --药包数量
+    local n = 4.5 --药包数量
     local m = 40 --每个药包速度
-    local d = 0.019 --阻力系数（机炮参数（尝试中））
+    local d = 0.006 --阻力系数（机炮参数（尝试中））
     --local d = 0.01 --阻力系数
     local T = 0.05 --时间间隔
     --local k = 0.05 --重力分量
-    local k = 0.0255 --重力分量
+    local k = 0.019 --重力分量
     local l = 6    --身管长度
     local velocity  --初速度
     local w = Distance_2D_Calc(x1,z1, x2,z2)
@@ -309,10 +269,11 @@ function Track_Calc(x1,y1,z1,x2,y2,z2)   --弹道计算
     local a3=m*n*T+d*l
     local a4=d*w
     local a5=-k*l/d/n+2-a*math.log(m*n*T)-h
+    local z=math.rad(math.acos(a1/a3))
     local pitch1=Newton_Raphson(a1,a2,a3,a4,a5,a,-1,5)
     local pitch2=Newton_Raphson(a1,a2,a3,a4,a5,a,1.5,5)
     --print("Distance 2D:"..w.." Height Difference:"..h)
-    print("Pitch1:"..math.deg(pitch1).." Pitch2:"..math.deg(pitch2).."Fx:"..Fx(a1,a2,a3,a4,a5,a,pitch1))
+    --print("Pitch1:"..math.deg(pitch1).." Pitch2:"..math.deg(pitch2).."Fx:"..Fx(a1,a2,a3,a4,a5,a,pitch1))
     --print("a1:"..a1.." a2:"..a2.." a3:"..a3.." a4:"..a4)
     return {
         Yaw_Angle = math.deg(atan_in_circle(x2 - x1, z2 - z1))+90,
@@ -344,47 +305,30 @@ end
 function Vertical_Height_Calc(pitch, time)
     local velocity = 180/20*math.sin(pitch)
     local cannon_length = 6
-    local drag = 0.99
+    local drag = 0.0001
     local gravity = 0.05
     local result
     local y0 = cannon_length * math.sin(pitch)
-    local t_int = math.floor(time)
-    local t_frac = time - t_int
-
-    if math.abs(1 - drag) < 0.001 then
-        local height = velocity * time - 0.5 * gravity * time * time + y0
-        return height
+    if math.abs(drag) < 0.001 then
+        return velocity * time - 0.5 * gravity * time * time - y0
     end
-    
-    local one_minus_d = 1 - drag  -- 0.01
-    
-    local d_pow_n
-    if t_int * math.log(drag) > -100 then
-        d_pow_n = math.pow(drag, t_int)
+    --[[
+    local exp_term
+    if drag * time > 100 then
+        exp_term = 0
     else
-        d_pow_n = 0
+        exp_term = math.exp(-drag * time)
     end
     
-    local one_minus_dn = 1 - d_pow_n
-    
-    local height_int = y0 - gravity * t_int / one_minus_d + 
-                      (velocity + gravity / one_minus_d) * one_minus_dn / one_minus_d
-    if t_frac < 1e-10 then
-        return height_int - y0
+    local term1 = -(gravity / drag) * time
+    local term2 = (velocity + gravity / drag) * (1 - exp_term) / drag
+    local height = term1 + term2 - cannon_length * math.sin(pitch)
+    if math.abs(height) < 0.001 then
+        height = 0
     end
-    
-    local d_pow_n1 = d_pow_n * drag
-    local one_minus_dn1 = 1 - d_pow_n1
-    
-    local height_next = y0 - gravity * (t_int + 1) / one_minus_d + 
-                       (velocity + gravity / one_minus_d) * one_minus_dn1 / one_minus_d
-    
-    local height = height_int + t_frac * (height_next - height_int)
-    --local height = height_int
     return height
-end
+    --]]
 
---[[
     local index = 1
     local last = 0
     while index < time + 1 do
@@ -397,12 +341,12 @@ end
     end
 
     return math.lerp(last, y0, time % math.floor(time))-cannon_length * math.sin(pitch)
+
 end
---]]
 
 
 local pitchList = {}
-for i = -80, 80, 0.03907 do
+for i = -30, 80, 0.02686 do
     table.insert(pitchList, math.rad(i))
 end
 
@@ -416,11 +360,9 @@ function Binary_Search_Pitch(target_height, distance)
         local pitch = pitchList[mid]
         local time = Flying_Time_Calc(pitch, distance)
         local height = Vertical_Height_Calc(pitch, time)
-        --print("Target Height: "..target_height.." Calculated Height: "..height.." Pitch: "..math.deg(pitch))
-        if math.abs(height - target_height) < 0.019 then
+        print("height: "..height.."time: "..time.." pitch: "..math.deg(pitch))
+        if math.abs(height - target_height) < 0.014 then
             best_pitch = pitch
-            --print("pitch:"..math.deg(pitch).."time:"..time.."height:"..height.."target_height:"..target_height)
-            print("height: "..height.."time:"..time.."pitch:"..math.deg(best_pitch))
             break
         elseif height < target_height then
             left = mid + 1
@@ -453,10 +395,8 @@ Cannon_Pos = Cannon_Position_Update()
 while true do
     Target_pos = Target_Update()
     --Target_pos = Position_Update(-100,-20,200)
-    Direction = Track_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, Target_pos.X, Target_pos.Y, Target_pos.Z)
-    --Direction = Binary_Method_Track_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, Target_pos.X, Target_pos.Y, Target_pos.Z)
+    --Direction = Track_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, Target_pos.X, Target_pos.Y, Target_pos.Z)
+    Direction = Binary_Method_Track_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, Target_pos.X, Target_pos.Y, Target_pos.Z)
     Motor_Calc()
-    --print(Direction.Pitch_Angle)
     --print("Yaw Target: "..math.floor(Direction.Yaw_Angle).."Yaw Current: "..math.floor(Yaw_Angle).." Pitch Target: "..math.floor(Direction.Pitch_Angle).." Pitch Current: "..math.floor(Pitch_Angle))
-
 end

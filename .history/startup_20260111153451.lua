@@ -73,8 +73,7 @@ end
 local tx,ty,tz,tname = 0,0,0,""
 
 function Target_Update()
-    local players = coordinate.getPlayers(512)
-    local monsters = coordinate.getMonster(512)
+    players = coordinate.getPlayers(512)
     local Distance = 9999
     for k, v in pairs(players) do
         --print("x="..v.x)
@@ -89,32 +88,11 @@ function Target_Update()
         --print("pose="..v.pose)
         --print("x="..v.x.." y="..v.y.." z="..v.z.." name="..v.name)
         --print("x="..v.x.." y="..v.y.." z="..v.z)
-        --tx = v.x
-        --ty = v.y+v.eyeHeight
-        --tz = v.z
-        --tname = v.name
-    end
-
-    for k, v in pairs(monsters) do
-    --print("x="..v.x)
-    --print("y="..v.y)
-    --print("z="..v.z)
-    --print("name="..v.name)
-    --print("uuid="..v.uuid)
-    --print("displayName="..v.displayName)
-    --print("health="..v.health)
-    --print("maxHealth="..v.maxHealth)
-    --print("viewVector.z="..v.viewVector.z)
-    --print("armor="..v.armor)
-    local dist = Distance_3D_Calc(Cannon_Pos.X, Cannon_Pos.Y, Cannon_Pos.Z, v.x, v.y, v.z)
-    if dist < Distance and dist > 9 then
-        Distance = dist
         tx = v.x
-        ty = v.y+0.6
+        ty = v.y+v.eyeHeight
         tz = v.z
         tname = v.name
     end
-end
     return {
         X = tx,
         Y = ty,
@@ -123,9 +101,6 @@ end
     }
 end
 
-function Target_Fliter()
-    
-end
 
 function Direction_Calc(x1,y1,z1,x2,y2,z2)
     return {
@@ -294,11 +269,11 @@ end
 function Track_Calc(x1,y1,z1,x2,y2,z2)   --弹道计算
     local n = 6 --药包数量
     local m = 40 --每个药包速度
-    local d = 0.019 --阻力系数（机炮参数（尝试中））
+    local d = 0.02 --阻力系数（机炮参数（尝试中））
     --local d = 0.01 --阻力系数
     local T = 0.05 --时间间隔
     --local k = 0.05 --重力分量
-    local k = 0.0255 --重力分量
+    local k = 0.025 --重力分量
     local l = 6    --身管长度
     local velocity  --初速度
     local w = Distance_2D_Calc(x1,z1, x2,z2)
