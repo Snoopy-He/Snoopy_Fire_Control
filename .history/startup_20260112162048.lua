@@ -27,7 +27,7 @@ local Parameters ={
         Target_Ready ={},  --备用目标,线性预测
         Cannon ={
             X,Y,Z = 0,0,0
-        },
+        }
         Cannon_Offset={
             X = -0.5,
             Y = 2.5,
@@ -311,7 +311,7 @@ end
 
 function Motor_Calc(parameter)
     parameter.Gimbal.Yaw_TarAng = math.circle_limit(parameter.Gimbal.Yaw_TarAng)
-    parameter.Gimbal.Pitch_TarAng = math.clamp(parameter.Gimbal.Pitch_TarAng, -30,80)
+    Direction.Pitch_Angle = math.clamp(Direction.Pitch_Angle, -30,80)
 
     Dircetion.Yaw_Angle = math.nan_Check(Direction.Yaw_Angle,last_yaw)
     Dircetion.Pitch_Angle = math.nan_Check(Direction.Pitch_Angle,last_pitch)

@@ -311,7 +311,7 @@ end
 
 function Motor_Calc(parameter)
     parameter.Gimbal.Yaw_TarAng = math.circle_limit(parameter.Gimbal.Yaw_TarAng)
-    parameter.Gimbal.Pitch_TarAng = math.clamp(parameter.Gimbal.Pitch_TarAng, -30,80)
+    parameter.Gimbal.Pitch_TarAng = math.clamp(Direction.Pitch_Angle, -30,80)
 
     Dircetion.Yaw_Angle = math.nan_Check(Direction.Yaw_Angle,last_yaw)
     Dircetion.Pitch_Angle = math.nan_Check(Direction.Pitch_Angle,last_pitch)

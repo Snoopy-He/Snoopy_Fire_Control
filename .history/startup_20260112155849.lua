@@ -5,44 +5,30 @@ local SCR=peripheral.find("monitor")
 local cannon = peripheral.find("cbc_cannon_mount")
 
 local Parameters ={
-    Targets ={
+    Target ={
         Distance_Max = 400,
         Distance_Min = 10,
     }
-    Gimbal={
-        Yaw_TarAng = 0,
-        Pitch_TarAng = 0,
-        Yaw_CurAng = 0,
-        Pitch_LastAng = 0,
-        Yaw_LastAng = 0,
-        Pitch_CurAng = 0,
-        Distance_3D = 0,
-        Distance_2D = 0,
-        Flying_Time = 0
-        },
-    Location ={
-        Target ={       --当前目标,卡尔曼滤波预测
-            X,Y,Z = 0,0,0
-        },
-        Target_Ready ={},  --备用目标,线性预测
-        Cannon ={
-            X,Y,Z = 0,0,0
-        },
-        Cannon_Offset={
-            X = -0.5,
-            Y = 2.5,
-            Z = 0.5
-        }
+    Cannon_Offset={
+        X = -0.5,
+        Y = 2.5,
+        Z = 0.5
     }
+    local Gimbal={
+        Yaw_TarAngle = 0,
+        Pitch_TarAngle = 0,
+        Distance = 0,
+    Flying_Time = 0
+}
     Pitch ={
         kp = 16,
         ki = 0,
         kd = 0,
-        error = 0,
-        last_err = 0,
-        err_all = 0,
-        speed_max = 1000,
-        angle_max = 80,
+        error = 0
+        last_err = 0
+        err_all = 0
+        speed_max = 1000
+        angle_max = 80
         angle_min = -30
     },
     Yaw ={
@@ -75,26 +61,51 @@ local Parameters ={
 
 local Angle_Speed = 26.666667/2
 
+function NewPosition(x,y,z)
+    return {
+        X = x,
+        Y = y,
+        Z = z,
+        name = ""
+    }
+end
+
+Cannon_Pos = NewPosition(0, 0, 0, "")
+Target_pos = NewPosition(0, 0, 0, "")
+
 function Init()
-    Yaw.setTargetSpeed(0)
-    Pitch.setTargetSpeed(0)
-    redstone.setOutput("front", false)
-    sleep(2)
     redstone.setOutput("front", true)
     Yaw.setTargetSpeed(0)
 end
 
-function Cannon_Position_Update(para)
+function Deinit()
+    redstone.setOutput("front", false)
+    Yaw.setTargetSpeed(0)
+    sleep(2)
+    
+end
+
+function Cannon_Position_Update()
     selfPos = coordinate.getAbsoluteCoordinates()
-    para.Location.Cannon.X = selfPos.x + para.Location.Cannon_Offset.X,
-    para.Location.Cannon.Y = selfPos.y + para.Location.Cannon_Offset.Y,
-    para.Location.Cannon.Z = selfPos.z + para.Location.Cannon_Offset.Z
+    return {
+        X = selfPos.x + Cannon_Offset.X,
+        Y = selfPos.y + Cannon_Offset.Y,
+        Z = selfPos.z + Cannon_Offset.Z
+    }
 end
 
 function print(text)
     SCR.clear()
     SCR.setCursorPos(1, 1)
     SCR.write(text)
+end
+
+function Position_Update(x,y,z)
+    return {
+        X = x,
+        Y = y,
+        Z = z
+    }
 end
 
 function math.Distance_3D_Calc(x1,y1,z1, x2,y2,z2)
@@ -244,12 +255,12 @@ end
 
 -------------------------------------------------predictor part-------------------------------------------------
 
-function LinearPredictor_Calc(target, flying_time)
+function LinearPredictor_Calc(target_pos, flying_time)
     local target_vx, target_vy, target_vz = 0,0,0
 
-    target_vx = target.X - target.Last_X
-    target_vy = target.Y - target.Last_X
-    target_vz = target.Z - target.Last_X
+    target_vx = target_pos.X - target_pos.Last_X
+    target_vy = target_pos.Y - target_pos.Last_X
+    target_vz = target_pos.Z - target_pos.Last_X
 
     local total_v = math.sqrt(target_vx*target_vx + target_vy*target_vy + target_vz*target_vz)
     if total_v < 0.01 then
@@ -257,21 +268,11 @@ function LinearPredictor_Calc(target, flying_time)
     end
 
     return {
-        X = target.X + target_vx * flying_time * (0.6 + 1/total_v / 2),  ---后面为经验系数,由测试得到
-        Y = target.Y + target_vy * flying_time * (0.6 + 1/total_v / 2),
-        Z = target.Z + target_vz * flying_time * (0.6 + 1/total_v / 2),
+        X = target_pos.X + target_vx * flying_time * (0.6 + 1/total_v / 2),
+        Y = target_pos.Y + target_vy * flying_time * (0.6 + 1/total_v / 2),
+        Z = target_pos.Z + target_vz * flying_time * (0.6 + 1/total_v / 2),
     }
 end
-
-function KalmanPredictor_Calc(target, flying_time)
-
-end
-
-function Predictor_Calc(target, flying_time)
-
-end
-
-
 
 local Player_Targets = {}
 local Monster_Targets = {}
@@ -292,6 +293,12 @@ function Target_Update(cannon_pos,player_targets,monster_targets,dist_min,dist_m
     Monster_Targets = Targets_Oder(Monster_Targets)
 end
 
+function KalmanPredictor_Calc(target_pos, flying_time)
+end
+
+function Predictor_Calc(targets)
+end
+
 function Direction_Calc(x1,y1,z1,x2,y2,z2)
     return {
         Yaw_Angle = math.deg(math.atan2(z2 - z1, x2 - x1)) + 90,
@@ -299,6 +306,14 @@ function Direction_Calc(x1,y1,z1,x2,y2,z2)
         Pitch_Angle = math.deg(math.asin((y2 - y1) / Distance_3D_Calc(x1, y1, z1, x2, y2, z2))),
     }
 end
+
+
+local Yaw_Angle = 0
+local Pitch_Angle = 0
+
+local last_yaw = 0
+local last_pitch = 0
+
 
 function PID_Calc(current,target,para)
     local para.error = target-current
@@ -310,8 +325,8 @@ function PID_Calc(current,target,para)
 end
 
 function Motor_Calc(parameter)
-    parameter.Gimbal.Yaw_TarAng = math.circle_limit(parameter.Gimbal.Yaw_TarAng)
-    parameter.Gimbal.Pitch_TarAng = math.clamp(parameter.Gimbal.Pitch_TarAng, -30,80)
+    Direction.Yaw_Angle = math.circle_limit(Direction.Yaw_Angle)
+    Direction.Pitch_Angle = math.clamp(Direction.Pitch_Angle, -30,80)
 
     Dircetion.Yaw_Angle = math.nan_Check(Direction.Yaw_Angle,last_yaw)
     Dircetion.Pitch_Angle = math.nan_Check(Direction.Pitch_Angle,last_pitch)
@@ -331,8 +346,8 @@ function Motor_Calc(parameter)
     Pit.setTargetSpeed(math.floor(Pitch_Value))
     last_yaw = Direction.Yaw_Angle
     last_pitch = Direction.Pitch_Angle
-    Yaw_Angle = Yaw_Angle + math.floor(Yaw_Value)/Angle_Speed
-    Pitch_Angle = Pitch_Angle + math.floor(Pitch_Value)/Angle_Speed
+    Yaw_Angle= Yaw_Angle + math.floor(Yaw_Value)/Angle_Speed
+    Pitch_Angle= Pitch_Angle + math.floor(Pitch_Value)/Angle_Speed
     Yaw_Angle = math.circle_limit(Yaw_Angle)
 end
 
@@ -352,9 +367,12 @@ function Fx_derivative(p1,p2,p3,p4,a,x)
     return sec(x)*(math.tan(x)*(p1-a*p4/(p3-p4*sec(x)))+p2*sec(x))
 end
 
+
 function Newton_Raphson(p1,p2,p3,p4,p5,a,x0,n)
     local x = x0
     for i=1,n do
+        --local f = Fx(p1,p2,p3,p4,x)
+        --local f_derivative = Fx_derivative(p1,p2,p3,x)
         local f = Fx(p1,p2,p3,p4,p5,a,x)
         local f_derivative = Fx_derivative(p1,p2,p3,p4,a,x)
         if f_derivative == 0 then
@@ -401,6 +419,7 @@ function Track_Calc(x1,y1,z1,x2,y2,z2)   --弹道计算
         Flying_Time = Flying_Time_Calc(math.min(pitch1, pitch2), Distance_2D_Calc(x1, z1, x2, z2))
     }
 end
+
 
 function Flying_Time_Calc(pitch,distance)
     local n = 6 --药包数量

@@ -13,36 +13,37 @@ local Parameters ={
         Yaw_TarAng = 0,
         Pitch_TarAng = 0,
         Yaw_CurAng = 0,
-        Pitch_LastAng = 0,
-        Yaw_LastAng = 0,
         Pitch_CurAng = 0,
         Distance_3D = 0,
         Distance_2D = 0,
         Flying_Time = 0
-        },
-    Location ={
-        Target ={       --当前目标,卡尔曼滤波预测
-            X,Y,Z = 0,0,0
-        },
-        Target_Ready ={},  --备用目标,线性预测
-        Cannon ={
-            X,Y,Z = 0,0,0
-        },
-        Cannon_Offset={
-            X = -0.5,
-            Y = 2.5,
-            Z = 0.5
         }
+    Location ={
+        Target ={
+            X = 0,
+            Y = 0,
+            Z = 0
+        }
+        Cannon ={
+            X = 0,
+            Y = 0,
+            Z = 0
+        }
+        Cannon_Offset={
+        X = -0.5,
+        Y = 2.5,
+        Z = 0.5
+    }
     }
     Pitch ={
         kp = 16,
         ki = 0,
         kd = 0,
-        error = 0,
-        last_err = 0,
-        err_all = 0,
-        speed_max = 1000,
-        angle_max = 80,
+        error = 0
+        last_err = 0
+        err_all = 0
+        speed_max = 1000
+        angle_max = 80
         angle_min = -30
     },
     Yaw ={
@@ -257,18 +258,10 @@ function LinearPredictor_Calc(target, flying_time)
     end
 
     return {
-        X = target.X + target_vx * flying_time * (0.6 + 1/total_v / 2),  ---后面为经验系数,由测试得到
-        Y = target.Y + target_vy * flying_time * (0.6 + 1/total_v / 2),
-        Z = target.Z + target_vz * flying_time * (0.6 + 1/total_v / 2),
+        X = target_pos.X + target_vx * flying_time * (0.6 + 1/total_v / 2),  ---后面为经验系数,由测试得到
+        Y = target_pos.Y + target_vy * flying_time * (0.6 + 1/total_v / 2),
+        Z = target_pos.Z + target_vz * flying_time * (0.6 + 1/total_v / 2),
     }
-end
-
-function KalmanPredictor_Calc(target, flying_time)
-
-end
-
-function Predictor_Calc(target, flying_time)
-
 end
 
 
@@ -310,8 +303,8 @@ function PID_Calc(current,target,para)
 end
 
 function Motor_Calc(parameter)
-    parameter.Gimbal.Yaw_TarAng = math.circle_limit(parameter.Gimbal.Yaw_TarAng)
-    parameter.Gimbal.Pitch_TarAng = math.clamp(parameter.Gimbal.Pitch_TarAng, -30,80)
+    Direction.Yaw_Angle = math.circle_limit(Direction.Yaw_Angle)
+    Direction.Pitch_Angle = math.clamp(Direction.Pitch_Angle, -30,80)
 
     Dircetion.Yaw_Angle = math.nan_Check(Direction.Yaw_Angle,last_yaw)
     Dircetion.Pitch_Angle = math.nan_Check(Direction.Pitch_Angle,last_pitch)
