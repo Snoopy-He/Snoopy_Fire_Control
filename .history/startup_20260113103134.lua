@@ -60,11 +60,11 @@ local Parameters ={
         speed = 0
     },
     AutoCannon ={
-        n = 5.32, --药包数量
+        n = 4.5, --药包数量
         m = 40, --每个药包速度
         d = 0.01, --阻力系数
         T = 0.05, --时间间隔
-        k = 0.025, --重力分量w
+        k = 0.025, --重力分量
         l = 6    --身管长度
     },
     BigCannon ={
@@ -221,7 +221,7 @@ function Monster_Target_Update(target,cannon,dist_min,dist_max,old_target)
     end
     return {
         X = target.x,
-        Y = target.y + 0.2,
+        Y = target.y + 0.6,
         Z = target.z,
         Last_X = last_x,
         Last_Y = last_y,
@@ -270,9 +270,9 @@ function LinearPredictor_Calc(target, flying_time)
     end
 
     return {
-        X = target.X + target_vx * flying_time * 1.6,  ---后面为经验系数,由测试得到
-        Y = target.Y + target_vy * flying_time * 1.6,
-        Z = target.Z + target_vz * flying_time * 1.6,
+        X = target.X + target_vx * flying_time,  ---后面为经验系数,由测试得到
+        Y = target.Y + target_vy * flying_time,
+        Z = target.Z + target_vz * flying_time,
     }
 end
 
@@ -281,11 +281,10 @@ function KalmanPredictor_Calc(target, flying_time)
 end
 
 function Predictor_Calc(parameter)
-    if parameter.Target_Type == "Player" and parameter.Location.Player_Targets ~= nil then
+    if parameter.Target_Type == "Player" then
         parameter.Location.Target = LinearPredictor_Calc(parameter.Location.Player_Targets[1],parameter.Location.Flying_Time)
         Track_Calc(parameter)
-    end
-    if parameter.Target_Type == "Monster" and parameter.Location.Monster_Targets ~= nil then
+    else
         parameter.Location.Target = LinearPredictor_Calc(parameter.Location.Monster_Targets[1],parameter.Location.Flying_Time)
         Track_Calc(parameter)
     end
@@ -333,14 +332,7 @@ end
 
 function Send_Yaw()
     Yaw.setTargetSpeed(math.floor(Parameters.Yaw.speed))
-end
-
-function Send_Pitch()
-    Pitch.setTargetSpeed(math.floor(Parameters.Pitch.speed))
-end
-
-function Send_YawandPitch()
-    parallel.waitForAll(Send_Yaw,Send_Pitch)
+    
 end
 
 function Motor_Calc(parameter)
@@ -361,12 +353,12 @@ function Motor_Calc(parameter)
     parameter.Yaw.speed = PID_Calc(parameter.Gimbal.Yaw_CurAng,parameter.Gimbal.Yaw_TarAng,parameter.Yaw)
     parameter.Pitch.speed = PID_Calc(parameter.Gimbal.Pitch_CurAng,parameter.Gimbal.Pitch_TarAng,parameter.Pitch)
 
+    Yaw.setTargetSpeed(math.floor(parameter.Yaw.speed))
     if parameter.Gimbal.Pitch_AngMin > parameter.Gimbal.Pitch_CurAng + math.floor(parameter.Pitch.speed)/Angle_Speed or parameter.Gimbal.Pitch_CurAng + math.floor(parameter.Pitch.speed)/Angle_Speed > parameter.Gimbal.Pitch_AngMax then
         parameter.Pitch.speed = 0
     end
-
-    Send_YawandPitch()
-
+    Yaw.setTargetSpeed(math.floor(parameter.Yaw.speed))
+    --Pitch.setTargetSpeed(math.floor(parameter.Pitch.speed))
     parameter.Gimbal.Yaw_LastAng = parameter.Gimbal.Yaw_TarAng
     parameter.Gimbal.Pitch_LastAng = parameter.Gimbal.Pitch_TarAng
 
@@ -471,7 +463,7 @@ end
 
 -------------------------------------------------------------------主函数--------------------------------------------------------------
 
-Init(Parameters,"AutoCannon","Monster","front","back")
+Init(Parameters,"AutoCannon","Player","front","back")
 Cannon_Position_Update(Parameters)
 while true do
     Target_Update(Parameters)

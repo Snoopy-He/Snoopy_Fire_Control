@@ -270,9 +270,9 @@ function LinearPredictor_Calc(target, flying_time)
     end
 
     return {
-        X = target.X + target_vx * flying_time * 1.6,  ---后面为经验系数,由测试得到
-        Y = target.Y + target_vy * flying_time * 1.6,
-        Z = target.Z + target_vz * flying_time * 1.6,
+        X = target.X + target_vx * flying_time * 1.2,  ---后面为经验系数,由测试得到
+        Y = target.Y + target_vy * flying_time * 1.2,
+        Z = target.Z + target_vz * flying_time * 1.2,
     }
 end
 
