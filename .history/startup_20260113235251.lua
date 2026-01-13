@@ -249,7 +249,7 @@ function Monster_Target_Update(target,cannon,dist_min,dist_max,old_target)
     end
     return {
         X = target.x,
-        Y = target.y + 0.1,
+        Y = target.y + 0.2,
         Z = target.z,
         Last_X = last_x,
         Last_Y = last_y,

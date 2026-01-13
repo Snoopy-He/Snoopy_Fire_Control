@@ -206,10 +206,6 @@ function Player_Target_Update(target,cannon,dist_min,dist_max,old_target)
             last_y = old_target[i].Y
             last_z = old_target[i].Z
             break
-        else
-            last_x = target.x
-            last_y = target.y
-            last_z = target.z
         end
         i = i + 1
     end
@@ -249,7 +245,7 @@ function Monster_Target_Update(target,cannon,dist_min,dist_max,old_target)
     end
     return {
         X = target.x,
-        Y = target.y + 0.1,
+        Y = target.y + 0.2,
         Z = target.z,
         Last_X = last_x,
         Last_Y = last_y,
@@ -277,7 +273,7 @@ function Targets_Order(targets)   --对目标根据距离进行冒泡排序
         end
         i = i + 1
     end
-    --print("x"..targets[1].X.."lx"..targets[1].Last_X)
+    print("x"..targets[1].X.."lx"..targets[1].Last_X)
     return targets
 end
 
@@ -302,9 +298,9 @@ function LinearPredictor_Calc(target, flying_time)
     end
 
     return {
-        X = target.X + target_vx * flying_time * 1.3,  ---后面为经验系数,由测试得到
-        Y = target.Y + target_vy * flying_time * 1.3,
-        Z = target.Z + target_vz * flying_time * 1.3,
+        X = target.X + target_vx * flying_time * 1.1,  ---后面为经验系数,由测试得到
+        Y = target.Y + target_vy * flying_time * 1.1,
+        Z = target.Z + target_vz * flying_time * 1.1,
         Last_X = target.Last_X,
         Last_Y = target.Last_Y,
         Last_Z = target.Last_Z
@@ -316,10 +312,10 @@ function KalmanPredictor_Calc(target, flying_time)
 end
 
 function Predictor_Calc(parameter)
-    local i,n = 1,10
+    local i,n = 1,5
     if parameter.Target_Type == "Player" then
         local length = #parameter.Location.Player_Targets
-        if length < n then
+        if length < 6 then
             for i = 1,length do
                 parameter.Location.Target_Ready[i] = LinearPredictor_Calc(parameter.Location.Player_Targets[i],0)
                 i = i + 1
@@ -337,7 +333,7 @@ function Predictor_Calc(parameter)
     end
     if parameter.Target_Type == "Monster" then
         local length = #parameter.Location.Monster_Targets
-        if length < n then
+        if length < 6 then
             for i = 1,length do
                 parameter.Location.Target_Ready[i] = LinearPredictor_Calc(parameter.Location.Monster_Targets[i],0)
                 i = i + 1
@@ -348,13 +344,13 @@ function Predictor_Calc(parameter)
                 i = i + 1
             end
         end
-        --print("x"..parameter.Location.Target_Ready[1].X)
+        --print("x"..parameter.Location.Target_Ready[1].X.."lx"..parameter.Location.Target_Ready[1].Last_X)
         parameter.Location.Target = LinearPredictor_Calc(parameter.Location.Target_Ready[1],parameter.Location.Flying_Time)
         Track_Calc(parameter)
         parameter.Location.Target = LinearPredictor_Calc(parameter.Location.Target_Ready[1],parameter.Location.Flying_Time)
         Track_Calc(parameter)
     end
-    --print("x"..parameter.Location.Target.X)
+
     parameter.Location.Target.X = math.nan_Check(parameter.Location.Target.X,0)
     parameter.Location.Target.Y = math.nan_Check(parameter.Location.Target.Y,0)
     parameter.Location.Target.Z = math.nan_Check(parameter.Location.Target.Z,0)

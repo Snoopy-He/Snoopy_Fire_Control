@@ -249,7 +249,7 @@ function Monster_Target_Update(target,cannon,dist_min,dist_max,old_target)
     end
     return {
         X = target.x,
-        Y = target.y + 0.1,
+        Y = target.y + 0.2,
         Z = target.z,
         Last_X = last_x,
         Last_Y = last_y,
@@ -302,9 +302,9 @@ function LinearPredictor_Calc(target, flying_time)
     end
 
     return {
-        X = target.X + target_vx * flying_time * 1.3,  ---后面为经验系数,由测试得到
-        Y = target.Y + target_vy * flying_time * 1.3,
-        Z = target.Z + target_vz * flying_time * 1.3,
+        X = target.X + target_vx * flying_time * 1.2,  ---后面为经验系数,由测试得到
+        Y = target.Y + target_vy * flying_time * 1.1,
+        Z = target.Z + target_vz * flying_time * 1.1,
         Last_X = target.Last_X,
         Last_Y = target.Last_Y,
         Last_Z = target.Last_Z

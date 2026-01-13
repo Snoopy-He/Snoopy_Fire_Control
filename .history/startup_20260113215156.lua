@@ -15,8 +15,7 @@ local Parameters ={
         Yaw_LastAng = 0,
         Pitch_CurAng = 0,
         Pitch_AngMax = 80,
-        Pitch_AngMin = -30,
-        Yaw_Offset = 0
+        Pitch_AngMin = -30
     },
     Location ={
         Distance_3D,Distance_2D = 0,0,
@@ -37,13 +36,11 @@ local Parameters ={
             Y = 2.5,
             Z = 0.5
         },
-        Player_TarFlag = false,
-        Monster_TarFlag = false,
         Player_Targets = {},
         Monster_Targets = {}
     },
     Pitch ={
-        kp = 25,
+        kp = 20,
         ki = 0,
         kd = 0.1,
         error = 0,
@@ -54,7 +51,7 @@ local Parameters ={
         speed = 0
     },
     Yaw ={
-        kp = 25,
+        kp = 20,
         ki = 0,
         kd = 0.1,
         error = 0,
@@ -68,51 +65,39 @@ local Parameters ={
         v = 160,
         d = 0.01, --阻力系数
         g = 0.025, --重力分量
-        l = 6,    --身管长度
-        Angle_Max = 80,
-        Angle_Min = -30
+        l = 6    --身管长度
     },
     BigCannon ={
         v = 160,
         d = 0.01, --阻力系数
         g = 0.05, --重力分量
-        l = 6,    --身管长度
-        Angle_Max = 75,
-        Angle_Min = -5
+        l = 6    --身管长度
     }
 }
 
 local Angle_Speed = 26.666667
 
-function Init(parameter,cannontype,targettype,enableside,fireside,faceside)
+function Init(parameter,cannontype,targettype,enableside,fireside)
     Yaw.setTargetSpeed(0)
     Pitch.setTargetSpeed(0)
     redstone.setOutput(enableside, false)
     redstone.setOutput(fireside, false)
-
-    if faceside == "east" then
-        parameter.Gimbal.Yaw_Offset = 0
-    elseif faceside == "north" then
-        parameter.Gimbal.Yaw_Offset = 90
-    elseif faceside == "west" then
-        parameter.Gimbal.Yaw_Offset = 180
-    elseif faceside == "south" then
-        parameter.Gimbal.Yaw_Offset = 270
-    end
-
-    if cannontype == "AutoCannon" then
-        parameter.Gimbal.Pitch_AngMax = parameter.AutoCannon.Angle_Max
-        parameter.Gimbal.Pitch_AngMin = parameter.AutoCannon.Angle_Min
-    elseif cannontype == "BigCannon" then
-        parameter.Gimbal.Pitch_AngMax = parameter.BigCannon.Angle_Max
-        parameter.Gimbal.Pitch_AngMin = parameter.BigCannon.Angle_Min
-    end
-
-    sleep(1)
+    sleep(2)
     redstone.setOutput(enableside, true)
     Yaw.setTargetSpeed(0)
     parameter.Cannon_Type = cannontype
     parameter.Target_Type = targettype
+end
+
+function Cannon_Position_Update(parameter)
+    selfPos = coordinate.getAbsoluteCoordinates()
+    parameter.Location.Cannon.X = selfPos.x + parameter.Location.Cannon_Offset.X
+    parameter.Location.Cannon.Y = selfPos.y + parameter.Location.Cannon_Offset.Y
+    parameter.Location.Cannon.Z = selfPos.z + parameter.Location.Cannon_Offset.Z
+
+    parameter.Location.Cannon.X = -106.5
+    parameter.Location.Cannon.Y = -56.62
+    parameter.Location.Cannon.Z = -25.5
 end
 
 function print(text)
@@ -206,12 +191,7 @@ function Player_Target_Update(target,cannon,dist_min,dist_max,old_target)
             last_y = old_target[i].Y
             last_z = old_target[i].Z
             break
-        else
-            last_x = target.x
-            last_y = target.y
-            last_z = target.z
         end
-        i = i + 1
     end
     return {
         X = target.x,
@@ -240,16 +220,11 @@ function Monster_Target_Update(target,cannon,dist_min,dist_max,old_target)
             last_y = old_target[i].Y
             last_z = old_target[i].Z
             break
-        else
-            last_x = target.x
-            last_y = target.y
-            last_z = target.z
         end
-        i = i + 1
     end
     return {
         X = target.x,
-        Y = target.y + 0.1,
+        Y = target.y + 0.2,
         Z = target.z,
         Last_X = last_x,
         Last_Y = last_y,
@@ -260,7 +235,7 @@ function Monster_Target_Update(target,cannon,dist_min,dist_max,old_target)
     }
 end
 
-function Targets_Order(targets)   --对目标根据距离进行冒泡排序
+function Targets_Oder(targets)   --对目标根据距离进行冒泡排序
     local length = #targets
     local swapped = false
     for i = 1, length do
@@ -270,29 +245,23 @@ function Targets_Order(targets)   --对目标根据距离进行冒泡排序
                 targets[j], targets[j + 1] = targets[j + 1], targets[j]
                 swapped = true
             end
-            j = j + 1
         end
         if not swapped then --如果这一轮没有发生交换，说明已经有序，提前结束
             break
         end
-        i = i + 1
     end
-    --print("x"..targets[1].X.."lx"..targets[1].Last_X)
     return targets
 end
 
 -------------------------------------------------predictor part-------------------------------------------------
 
 local target_vx, target_vy, target_vz = 0,0,0
+local last_x,last_y,last_z
 function LinearPredictor_Calc(target, flying_time)
     if target.Last_X ~= nil and target.Last_Y ~= nil and target.Last_Z ~= nil then   ---上一个位置不为空
         target_vx = target.X - target.Last_X
         target_vy = target.Y - target.Last_Y
         target_vz = target.Z - target.Last_Z
-    else 
-        target_vx = 0
-        target_vz = 0
-        target_vz = 0
     end
     --print("pr:"..target.Z+target_vz * flying_time.."ta"..target.Z)
 
@@ -301,13 +270,14 @@ function LinearPredictor_Calc(target, flying_time)
         total_v = 10000
     end
 
+    last_x = target.X
+    last_y = target.Y
+    last_z = target.Z
+
     return {
-        X = target.X + target_vx * flying_time * 1.3,  ---后面为经验系数,由测试得到
-        Y = target.Y + target_vy * flying_time * 1.3,
-        Z = target.Z + target_vz * flying_time * 1.3,
-        Last_X = target.Last_X,
-        Last_Y = target.Last_Y,
-        Last_Z = target.Last_Z
+        X = target.X + target_vx * flying_time,  ---后面为经验系数,由测试得到
+        Y = target.Y + target_vy * flying_time,
+        Z = target.Z + target_vz * flying_time,
     }
 end
 
@@ -316,85 +286,45 @@ function KalmanPredictor_Calc(target, flying_time)
 end
 
 function Predictor_Calc(parameter)
-    local i,n = 1,10
-    if parameter.Target_Type == "Player" then
-        local length = #parameter.Location.Player_Targets
-        if length < n then
-            for i = 1,length do
-                parameter.Location.Target_Ready[i] = LinearPredictor_Calc(parameter.Location.Player_Targets[i],0)
-                i = i + 1
-            end
-        else
-            for i = 1,n do
-                parameter.Location.Target_Ready[i] = LinearPredictor_Calc(parameter.Location.Player_Targets[i],0)
-                i = i + 1
-            end
-        end
-        parameter.Location.Target = LinearPredictor_Calc(parameter.Location.Target_Ready[1],parameter.Location.Flying_Time)
-        Track_Calc(parameter)
-        --parameter.Location.Target = LinearPredictor_Calc(parameter.Location.Player_Targets[1],parameter.Location.Flying_Time)
-        --Track_Calc(parameter)
-    end
-    if parameter.Target_Type == "Monster" then
-        local length = #parameter.Location.Monster_Targets
-        if length < n then
-            for i = 1,length do
-                parameter.Location.Target_Ready[i] = LinearPredictor_Calc(parameter.Location.Monster_Targets[i],0)
-                i = i + 1
-            end
-        else
-            for i = 1,n do
-                parameter.Location.Target_Ready[i] = LinearPredictor_Calc(parameter.Location.Monster_Targets[i],0)
-                i = i + 1
-            end
-        end
-        --print("x"..parameter.Location.Target_Ready[1].X)
-        parameter.Location.Target = LinearPredictor_Calc(parameter.Location.Target_Ready[1],parameter.Location.Flying_Time)
-        Track_Calc(parameter)
-        parameter.Location.Target = LinearPredictor_Calc(parameter.Location.Target_Ready[1],parameter.Location.Flying_Time)
+    if parameter.Target_Type == "Player" and parameter.Location.Player_Targets ~= nil then
+        parameter.Location.Target = LinearPredictor_Calc(parameter.Location.Player_Targets[1],parameter.Location.Flying_Time)
         Track_Calc(parameter)
     end
-    --print("x"..parameter.Location.Target.X)
-    parameter.Location.Target.X = math.nan_Check(parameter.Location.Target.X,0)
-    parameter.Location.Target.Y = math.nan_Check(parameter.Location.Target.Y,0)
-    parameter.Location.Target.Z = math.nan_Check(parameter.Location.Target.Z,0)
-    --print("x:"..math.floor(parameter.Location.Target.X).."y:"..math.floor(parameter.Location.Target.Y).."z:"..math.floor(parameter.Location.Target.Z))
+    if parameter.Target_Type == "Monster" and parameter.Location.Monster_Targets ~= nil then
+        --print("x:"..parameter.Location.Monster_Targets[1].X.."y:"..parameter.Location.Monster_Targets[1].Y.."Z:"..parameter.Location.Monster_Targets[1].Z)
+        parameter.Location.Target = LinearPredictor_Calc(parameter.Location.Monster_Targets[1],parameter.Location.Flying_Time)
+        --print("time"..parameter.Location.Flying_Time)
+        Track_Calc(parameter)
+    end
+    local i = 0
+    for i = 1,3 do
+    end
 end
 
 function Target_Pos_Update(parameter)
     local players = coordinate.getPlayers(parameter.Location.Distance_Max)
     local monsters = coordinate.getMonster(parameter.Location.Distance_Max)
     local i=1
-    parameter.Location.Player_TarFlag = false
-    parameter.Location.Monster_TarFlag = false
     for k, v in pairs(players) do
         parameter.Location.Player_Targets[i] = Player_Target_Update(v,parameter.Location.Cannon,parameter.Location.Distance_Min,parameter.Location.Distance_Max,parameter.Location.Player_Targets)
-        parameter.Location.Player_TarFlag = true
         i=i+1
     end
-
     i = 1
     for k, v in pairs(monsters) do
         parameter.Location.Monster_Targets[i] = Monster_Target_Update(v,parameter.Location.Cannon,parameter.Location.Distance_Min,parameter.Location.Distance_Max,parameter.Location.Monster_Targets)
-        parameter.Location.Monster_TarFlag = true
         i = i+1
     end
 end
 
 function Target_Update(parameter)
     Target_Pos_Update(parameter)
-    if parameter.Target_Type == "Player" and parameter.Location.Player_TarFlag then
-        parameter.Location.Player_Targets = Targets_Order(parameter.Location.Player_Targets)
-        Predictor_Calc(parameter) 
-    elseif parameter.Target_Type == "Monster" and parameter.Location.Monster_TarFlag then
-        parameter.Location.Monster_Targets = Targets_Order(parameter.Location.Monster_Targets)
+    if parameter.Location.Player_Targets ~= nil and parameter.Target_Type == "Player" then
+        parameter.Location.Player_Targets = Targets_Oder(parameter.Location.Player_Targets)
         Predictor_Calc(parameter)
-    else
-        parameter.Gimbal.Yaw_TarAng = 0
-        parameter.Gimbal.Pitch_TarAng = 0
-        parameter.Location.Distance_3D = 0
-        parameter.Location.Distance_2D = 0
-        parameter.Location.Flying_Time = 0
+    end
+    if parameter.Location.Monster_Targets ~= nil and parameter.Target_Type == "Monster" then
+        parameter.Location.Monster_Targets = Targets_Oder(parameter.Location.Monster_Targets)
+        Predictor_Calc(parameter)
     end
 
 end
@@ -513,11 +443,12 @@ function Track_Calc(parameter)   --弹道计算
     local pitch1=Newton_Raphson(a1,a2,a3,a4,a5,a6,-1,5)
     local pitch2=Newton_Raphson(a1,a2,a3,a4,a5,a6,1.5,5)
 
-    parameter.Gimbal.Yaw_TarAng = math.deg(math.atan_in_circle(parameter.Location.Target.X - parameter.Location.Cannon.X, parameter.Location.Target.Z - parameter.Location.Cannon.Z)) + parameter.Gimbal.Yaw_Offset
+    parameter.Gimbal.Yaw_TarAng = math.deg(math.atan_in_circle(parameter.Location.Target.X - parameter.Location.Cannon.X, parameter.Location.Target.Z - parameter.Location.Cannon.Z)) + 90
     parameter.Gimbal.Pitch_TarAng = math.deg(math.min(pitch1, pitch2))
     parameter.Location.Distance_3D = math.Distance_3D_Calc(parameter.Location.Cannon.X, parameter.Location.Cannon.Y, parameter.Location.Cannon.Z, parameter.Location.Target.X, parameter.Location.Target.Y, parameter.Location.Target.Z)
     parameter.Location.Distance_2D = w
     parameter.Location.Flying_Time = Flying_Time_Calc(math.min(pitch1, pitch2), w,parameter)
+    --print("time:"..parameter.Location.Flying_Time)
 end
 
 function Flying_Time_Calc(pitch,distance,parameter)
@@ -533,14 +464,16 @@ function Flying_Time_Calc(pitch,distance,parameter)
     end
 
     local result = -math.log(1-(distance-l*math.cos(pitch))*d/v/math.cos(pitch))/d
+    --print("time:"..result)
     return result
 end
 
 -------------------------------------------------------------------主函数--------------------------------------------------------------
 
-Init(Parameters,"AutoCannon","Monster","front","back","north")
+Init(Parameters,"AutoCannon","Monster","front","back")
 while true do
     Target_Update(Parameters)
     Motor_Calc(Parameters)
-    --print("yaw:"..Parameters.Gimbal.Yaw_TarAng.."pitch"..Parameters.Gimbal.Pitch_TarAng)
+    --print("tp: "..Parameters.Gimbal.Yaw_TarAng.."cp:"..Parameters.Gimbal.Yaw_CurAng)
+    --print("x:"..math.floor(Parameters.Location.Target.X).."y:"..math.floor(Parameters.Location.Target.Y).."z:"..math.floor(Parameters.Location.Target.Z))
 end
