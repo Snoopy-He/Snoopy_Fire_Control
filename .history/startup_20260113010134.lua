@@ -60,7 +60,7 @@ local Parameters ={
         speed = 0
     },
     AutoCannon ={
-        n = 4.5, --药包数量
+        n = 4, --药包数量
         m = 40, --每个药包速度
         d = 0.01, --阻力系数
         T = 0.05, --时间间隔

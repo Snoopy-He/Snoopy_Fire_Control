@@ -20,7 +20,7 @@ local Parameters ={
     Location ={
         Distance_3D,Distance_2D = 0,0,
         Flying_Time = 0,
-        Distance_Max = 500,
+        Distance_Max = 400,
         Distance_Min = 10,
         Target ={       --当前目标,卡尔曼滤波预测
             X,Y,Z,Last_X,Last_Y,Last_Z = 0,0,0,0,0,0
@@ -38,9 +38,9 @@ local Parameters ={
         Monster_Targets = {}
     },
     Pitch ={
-        kp = 20,
+        kp = 16,
         ki = 0,
-        kd = 0.1,
+        kd = 0,
         error = 0,
         last_err = 0,
         err_all = 0,
@@ -49,9 +49,9 @@ local Parameters ={
         speed = 0
     },
     Yaw ={
-        kp = 20,
+        kp = 16,
         ki = 0,
-        kd = 0.1,
+        kd = 0,
         error = 0,
         last_err = 0,
         err_all = 0,
@@ -60,11 +60,11 @@ local Parameters ={
         speed = 0
     },
     AutoCannon ={
-        n = 4.5, --药包数量
+        n = 6, --药包数量
         m = 40, --每个药包速度
-        d = 0.01, --阻力系数
+        d = 0.019, --阻力系数
         T = 0.05, --时间间隔
-        k = 0.025, --重力分量
+        k = 0.0255, --重力分量
         l = 6    --身管长度
     },
     BigCannon ={
@@ -192,7 +192,7 @@ function Player_Target_Update(target,cannon,dist_min,dist_max,old_target)
     end
     return {
         X = target.x,
-        Y = target.y + target.eyeHeight,
+        Y = target.y,
         Z = target.z,
         Distance = math.clamp(math.Distance_3D_Calc(target.x,target.y,target.z,cannon.X,cannon.Y,cannon.Z),dist_min,dist_max),
         Viewx = target.viewVector.x,
@@ -221,7 +221,7 @@ function Monster_Target_Update(target,cannon,dist_min,dist_max,old_target)
     end
     return {
         X = target.x,
-        Y = target.y + 0.6,
+        Y = target.y,
         Z = target.z,
         Last_X = last_x,
         Last_Y = last_y,
@@ -270,9 +270,9 @@ function LinearPredictor_Calc(target, flying_time)
     end
 
     return {
-        X = target.X + target_vx * flying_time,  ---后面为经验系数,由测试得到
-        Y = target.Y + target_vy * flying_time,
-        Z = target.Z + target_vz * flying_time,
+        X = target.X + target_vx * flying_time * (0.6 + 1/total_v / 2),  ---后面为经验系数,由测试得到
+        Y = target.Y + target_vy * flying_time * (0.6 + 1/total_v / 2),
+        Z = target.Z + target_vz * flying_time * (0.6 + 1/total_v / 2),
     }
 end
 
@@ -284,8 +284,8 @@ function Predictor_Calc(parameter)
     if parameter.Target_Type == "Player" then
         parameter.Location.Target = LinearPredictor_Calc(parameter.Location.Player_Targets[1],parameter.Location.Flying_Time)
         Track_Calc(parameter)
-        --parameter.Location.Target = LinearPredictor_Calc(parameter.Location.Target,parameter.Location.Flying_Time)
-        --Track_Calc(parameter)
+        parameter.Location.Target = LinearPredictor_Calc(parameter.Location.Target,parameter.Location.Flying_Time)
+        Track_Calc(parameter)
     else
         parameter.Location.Target = LinearPredictor_Calc(parameter.Location.Monster_Targets[1],parameter.Location.Flying_Time)
         Track_Calc(parameter)
@@ -322,7 +322,7 @@ function Target_Update(parameter)
         parameter.Location.Monster_Targets = Targets_Oder(parameter.Location.Monster_Targets)
         Predictor_Calc(parameter)
     end
-
+    --print("tar"..parameter.Gimbal.Pitch_TarAng)
 end
 
 function PID_Calc(current,target,para)
@@ -337,9 +337,10 @@ end
 function Motor_Calc(parameter)
     parameter.Gimbal.Yaw_TarAng = math.circle_limit(parameter.Gimbal.Yaw_TarAng)
     parameter.Gimbal.Pitch_TarAng = math.clamp(parameter.Gimbal.Pitch_TarAng, parameter.Gimbal.Pitch_AngMin,parameter.Gimbal.Pitch_AngMax)
+    --print("tar"..parameter.Gimbal.Pitch_TarAng)
 
     parameter.Gimbal.Yaw_TarAng = math.nan_Check(parameter.Gimbal.Yaw_TarAng,parameter.Gimbal.Yaw_LastAng)
-    parameter.Gimbal.Pitch_TarAng = math.nan_Check(parameter.Gimbal.Pitch_TarAng,parameter.Gimbal.Pitch_LastAng)
+    parameter.Gimbal.Pitch_TarAng = math.nan_Check(parameter.Gimbal.Yaw_TarAng,parameter.Gimbal.Pitch_LastAng)
 
     if math.abs(parameter.Gimbal.Yaw_TarAng - parameter.Gimbal.Yaw_CurAng) > 180 then   --过零点检测
         if parameter.Gimbal.Yaw_TarAng > parameter.Gimbal.Yaw_CurAng then
@@ -351,12 +352,11 @@ function Motor_Calc(parameter)
 
     parameter.Yaw.speed = PID_Calc(parameter.Gimbal.Yaw_CurAng,parameter.Gimbal.Yaw_TarAng,parameter.Yaw)
     parameter.Pitch.speed = PID_Calc(parameter.Gimbal.Pitch_CurAng,parameter.Gimbal.Pitch_TarAng,parameter.Pitch)
+    --print("pitch:"..parameter.Gimbal.Pitch.speed)
 
     Yaw.setTargetSpeed(math.floor(parameter.Yaw.speed))
-    if parameter.Gimbal.Pitch_AngMin > parameter.Gimbal.Pitch_CurAng + math.floor(parameter.Pitch.speed)/Angle_Speed or parameter.Gimbal.Pitch_CurAng + math.floor(parameter.Pitch.speed)/Angle_Speed > parameter.Gimbal.Pitch_AngMax then
-        parameter.Pitch.speed = 0
-    end
     Pitch.setTargetSpeed(math.floor(parameter.Pitch.speed))
+
     parameter.Gimbal.Yaw_LastAng = parameter.Gimbal.Yaw_TarAng
     parameter.Gimbal.Pitch_LastAng = parameter.Gimbal.Pitch_TarAng
 
@@ -398,7 +398,7 @@ function Newton_Raphson(p1,p2,p3,p4,p5,a,x0,n)
         end
         x = x_new
     end
-    x = math.nan_Check(x,100)
+    x = math.nan_Check(x,0)
     return x
 end
 
@@ -419,8 +419,7 @@ function Track_Calc(parameter)   --弹道计算
         k = parameter.BigCannon.k
         l = parameter.BigCannon.l
     end
-    --print(parameter.Cannon_Type)
-    print("d:"..d.." k:"..k)
+
     local w = math.Distance_2D_Calc(parameter.Location.Cannon.X,parameter.Location.Cannon.Z, parameter.Location.Target.X,parameter.Location.Target.Z)
     local h = parameter.Location.Target.Y - parameter.Location.Cannon.Y
     local a = k*m*T/d/d
@@ -431,13 +430,15 @@ function Track_Calc(parameter)   --弹道计算
     local a5 = -k*l/d/n+2-a*math.log(m*n*T)-h
     local pitch1=Newton_Raphson(a1,a2,a3,a4,a5,a,-1,5)
     local pitch2=Newton_Raphson(a1,a2,a3,a4,a5,a,1.5,5)
-    --print("p1: "..pitch1.." p2: "..pitch2)
-
+    --print("pitch:"..math.deg(math.min(pitch1, pitch2)))
+    --print("h:"..h.."w"..w)
+    print("p1:"..pitch1.."p2:"..pitch2)
     parameter.Gimbal.Yaw_TarAng = math.deg(math.atan_in_circle(parameter.Location.Target.X - parameter.Location.Cannon.X, parameter.Location.Target.Z - parameter.Location.Cannon.Z)) + 90
     parameter.Gimbal.Pitch_TarAng = math.deg(math.min(pitch1, pitch2))
     parameter.Location.Distance_3D = math.Distance_3D_Calc(parameter.Location.Cannon.X, parameter.Location.Cannon.Y, parameter.Location.Cannon.Z, parameter.Location.Target.X, parameter.Location.Target.Y, parameter.Location.Target.Z)
     parameter.Location.Distance_2D = w
     parameter.Location.Target.Flying_Time = Flying_Time_Calc(parameter.Gimbal.Pitch_TarAng, w,parameter)
+    --print("tar"..parameter.Gimbal.Pitch_TarAng)
 end
 
 function Flying_Time_Calc(pitch,distance,parameter)
@@ -464,7 +465,7 @@ end
 
 -------------------------------------------------------------------主函数--------------------------------------------------------------
 
-Init(Parameters,"AutoCannon","Player","front","back")
+Init(Parameters,"Autocannon","Monster","front","back")
 Cannon_Position_Update(Parameters)
 while true do
     Target_Update(Parameters)

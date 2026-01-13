@@ -20,7 +20,7 @@ local Parameters ={
     Location ={
         Distance_3D,Distance_2D = 0,0,
         Flying_Time = 0,
-        Distance_Max = 500,
+        Distance_Max = 400,
         Distance_Min = 10,
         Target ={       --当前目标,卡尔曼滤波预测
             X,Y,Z,Last_X,Last_Y,Last_Z = 0,0,0,0,0,0
@@ -38,9 +38,9 @@ local Parameters ={
         Monster_Targets = {}
     },
     Pitch ={
-        kp = 20,
+        kp = 16,
         ki = 0,
-        kd = 0.1,
+        kd = 0,
         error = 0,
         last_err = 0,
         err_all = 0,
@@ -49,9 +49,9 @@ local Parameters ={
         speed = 0
     },
     Yaw ={
-        kp = 20,
+        kp = 16,
         ki = 0,
-        kd = 0.1,
+        kd = 0,
         error = 0,
         last_err = 0,
         err_all = 0,
@@ -60,11 +60,11 @@ local Parameters ={
         speed = 0
     },
     AutoCannon ={
-        n = 4.5, --药包数量
+        n = 5.5, --药包数量
         m = 40, --每个药包速度
-        d = 0.01, --阻力系数
+        d = 0.002, --阻力系数
         T = 0.05, --时间间隔
-        k = 0.025, --重力分量
+        k = 0.026, --重力分量
         l = 6    --身管长度
     },
     BigCannon ={
